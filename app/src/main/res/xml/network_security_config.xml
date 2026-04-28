@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow plaintext MQTT (port 1883) on the local LAN. -->
+    <base-config cleartextTrafficPermitted="true"/>
+</network-security-config>
