@@ -73,7 +73,7 @@ You'll get a pairing prompt on the TV the first time.
 ## Step 4: Configure Mosquitto
 
 Ensure your broker has a login for the bridge. In Home Assistant go to
-**Settings → Add-ons → Mosquitto broker → Configuration** and add:
+**Settings → Apps (or Add-ons) → Mosquitto broker → Configuration** and add:
 
 ```yaml
 logins:
