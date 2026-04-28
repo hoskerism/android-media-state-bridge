@@ -86,14 +86,18 @@ class MainActivity : AppCompatActivity() {
         })
 
         add(Button(this).apply {
-            text = "Open Notification Access settings"
+            text = "Check Notification Access settings"
             setOnClickListener {
                 startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             }
         })
 
         add(TextView(this).apply {
-            text = "After granting Notification Access, return here and tap Save."
+            text = "On Android 14+, the toggle here may be greyed out.\n" +
+                "If so, grant access via ADB instead:\n" +
+                "adb shell cmd notification allow_listener " +
+                "com.example.mediastatebridge/" +
+                "com.example.mediastatebridge.MediaListenerService"
         })
 
         setContentView(ScrollView(this).apply { addView(root) })

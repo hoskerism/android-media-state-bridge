@@ -241,18 +241,41 @@ class MediaListenerService : NotificationListenerService() {
 
     private fun publishState(pkg: String, state: PlaybackState?, meta: MediaMetadata?) {
         val s = when (state?.state) {
-            PlaybackState.STATE_PLAYING -> "playing"
-            PlaybackState.STATE_PAUSED -> "paused"
+            PlaybackState.STATE_PLAYING   -> "playing"
+            PlaybackState.STATE_PAUSED    -> "paused"
             PlaybackState.STATE_BUFFERING -> "buffering"
-            PlaybackState.STATE_STOPPED -> "stopped"
-            PlaybackState.STATE_NONE, null -> "none"
-            else -> "other"
+            PlaybackState.STATE_STOPPED   -> "stopped"
+            PlaybackState.STATE_NONE, null -> "idle"
+            else -> "idle"
         }
         val safe = pkg.replace('.', '_')
         publish("$topicBase/app/$safe/state", s, retain = true)
         val title = meta?.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty()
         publish("$topicBase/app/$safe/title", title, retain = true)
         Log.i(TAG, "$pkg -> $s ($title)")
+
+        // Also publish a consolidated tv_state that reflects the most
+        // important active session.
+        publishTvState()
+    }
+
+    private fun publishTvState() {
+        // Find the first session that is playing; if none, the first that is
+        // paused/buffering; otherwise idle.
+        val playing = sessions.values.firstOrNull { (c, _) ->
+            c.playbackState?.state == PlaybackState.STATE_PLAYING
+        }
+        val active = playing ?: sessions.values.firstOrNull { (c, _) ->
+            c.playbackState?.state == PlaybackState.STATE_PAUSED ||
+                c.playbackState?.state == PlaybackState.STATE_BUFFERING
+        }
+        val state = when (active?.first?.playbackState?.state) {
+            PlaybackState.STATE_PLAYING   -> "playing"
+            PlaybackState.STATE_PAUSED    -> "paused"
+            PlaybackState.STATE_BUFFERING -> "buffering"
+            else -> "idle"
+        }
+        publish("$topicBase/tv_state", state, retain = true)
     }
 
     private fun publish(topic: String, payload: String, retain: Boolean) {
@@ -269,46 +292,18 @@ class MediaListenerService : NotificationListenerService() {
         }
     }
 
-    // ---------------- Home Assistant MQTT Discovery ----------------
+    // ── Home Assistant MQTT Discovery ─────────────────────────────────────────
 
     private fun publishDiscovery() {
-        val apps = mapOf(
-            "Netflix" to "com.netflix.ninja",
-            "YouTube" to "com.google.android.youtube.tv",
-            "Plex" to "com.plexapp.android",
-            "Disney+" to "com.disney.disneyplus",
-            "Prime Video" to "com.amazon.amazonvideo.livingroom",
-            "Stan" to "au.com.stan.and",
-            "Spotify" to "com.spotify.tv.android",
-            "Kodi" to "org.xbmc.kodi"
-        )
         val deviceBlock =
             """"device":{"identifiers":["$device"],"name":"$device","manufacturer":"MediaStateBridge","model":"Android TV"}"""
 
-        for ((name, pkg) in apps) {
-            val safe = pkg.replace('.', '_')
-            val uniq = "${device}_$safe"
-            val cfg = """
-                {
-                  "name":"$name state",
-                  "unique_id":"$uniq",
-                  "state_topic":"$topicBase/app/$safe/state",
-                  "availability_topic":"$topicBase/availability",
-                  $deviceBlock
-                }
-            """.trimIndent()
-            publish("homeassistant/sensor/$uniq/config", cfg, retain = true)
-        }
+        // Single consolidated state sensor — playing/paused/buffering/idle.
+        val cfgState = """{"name":"TV state","unique_id":"${device}_tv_state","state_topic":"$topicBase/tv_state","availability_topic":"$topicBase/availability",$deviceBlock}"""
+        publish("homeassistant/sensor/${device}_tv_state/config", cfgState, retain = true)
 
-        val cfgActive = """
-            {
-              "name":"Active media app",
-              "unique_id":"${device}_active",
-              "state_topic":"$topicBase/active",
-              "availability_topic":"$topicBase/availability",
-              $deviceBlock
-            }
-        """.trimIndent()
+        // Which app is currently the active media source.
+        val cfgActive = """{"name":"Active media app","unique_id":"${device}_active","state_topic":"$topicBase/active","availability_topic":"$topicBase/availability",$deviceBlock}"""
         publish("homeassistant/sensor/${device}_active/config", cfgActive, retain = true)
     }
 }
