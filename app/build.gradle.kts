@@ -6,6 +6,7 @@ plugins {
 android {
     namespace = "com.example.mediastatebridge"
     compileSdk = 34
+    base.archivesName = "media-state-bridge"
 
     defaultConfig {
         applicationId = "com.example.mediastatebridge"
