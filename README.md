@@ -88,8 +88,7 @@ Save and restart the Mosquitto add-on.
 On Android 14, the in-app toggle is greyed out. Grant via ADB instead:
 
 ```bash
-adb shell cmd notification allow_listener \
-  com.example.mediastatebridge/com.example.mediastatebridge.MediaListenerService
+adb shell cmd notification allow_listener com.example.mediastatebridge/com.example.mediastatebridge.MediaListenerService
 ```
 
 ## Step 6: Configure the app
