@@ -44,8 +44,7 @@ Per-app state is also available on the MQTT topic tree at
 ## Step 1: Download the APK
 
 Download `media-state-bridge-debug.apk` from the
-[latest Actions build](../../actions) (click the run → scroll to **Artifacts**
-→ download the zip).
+[Latest Release](../../releases).
 
 Or build locally (requires JDK 17 + Android command-line tools):
 
